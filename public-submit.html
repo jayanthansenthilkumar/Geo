@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Complaint - GeoReport Tamil Nadu</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Sweet Alert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+
+        .submit-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card-background);
+            border-radius: 1.5rem;
+            box-shadow: var(--shadow-xl);
+            overflow: hidden;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .submit-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .submit-header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .submit-header p {
+            font-size: 1rem;
+            opacity: 0.95;
+        }
+
+        .complaint-form {
+            padding: 2rem;
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+        }
+
+        .form-section h2 {
+            color: var(--text-primary);
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .form-group label .required {
+            color: #ef4444;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            background-color: var(--card-background);
+            color: var(--text-primary);
+            font-family: 'Roboto', sans-serif;
+            transition: all var(--transition-fast);
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .map-section {
+            margin-bottom: 1.5rem;
+        }
+
+        #complaint-map {
+            width: 100%;
+            height: 400px;
+            border-radius: 0.5rem;
+            border: 2px solid var(--border-color);
+        }
+
+        .location-hint {
+            margin-top: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .submit-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .submit-btn {
+            padding: 1rem 3rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .back-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .user-info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .user-info-box p {
+            color: var(--text-primary);
+            margin: 0.25rem 0;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="submit-container">
+        <div class="submit-header">
+            <h1>📝 Submit New Complaint</h1>
+            <p>Report a civic issue in your area</p>
+        </div>
+
+        <form class="complaint-form" id="complaint-form" onsubmit="handleComplaintSubmit(event)">
+            <!-- User Info Display -->
+            <div class="user-info-box">
+                <p><strong>Submitting as:</strong> <span id="user-name"></span></p>
+                <p><strong>Contact:</strong> <span id="user-contact"></span></p>
+            </div>
+
+            <!-- Complaint Details -->
+            <div class="form-section">
+                <h2>📝 Complaint Details</h2>
+                
+                <div class="form-group">
+                    <label for="complaint-category">Category <span class="required">*</span></label>
+                    <select id="complaint-category" required onchange="updateSubcategories()">
+                        <option value="">Select Category</option>
+                        <option value="Road">Road & Infrastructure</option>
+                        <option value="Garbage">Garbage & Sanitation</option>
+                        <option value="Streetlight">Street Lighting</option>
+                        <option value="Water">Water Supply & Drainage</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="complaint-type">Issue Type <span class="required">*</span></label>
+                    <select id="complaint-type" required>
+                        <option value="">Select Issue Type</option>
+                        <option value="Pothole">Pothole</option>
+                        <option value="Garbage Dump">Garbage Dump</option>
+                        <option value="Streetlight Out">Streetlight Not Working</option>
+                        <option value="Water Leakage">Water Leakage</option>
+                        <option value="Road Damage">Road Damage</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="complaint-description">Description <span class="required">*</span></label>
+                    <textarea id="complaint-description" placeholder="Describe the issue in detail..." required></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="complaint-priority">Priority</label>
+                        <select id="complaint-priority">
+                            <option value="Medium">Medium</option>
+                            <option value="High">High (Urgent)</option>
+                            <option value="Low">Low</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location Information -->
+            <div class="form-section">
+                <h2>📍 Location Information</h2>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="complaint-city">City <span class="required">*</span></label>
+                        <select id="complaint-city" required onchange="updateMapLocation()">
+                            <option value="">Select City</option>
+                            <option value="Chennai">Chennai</option>
+                            <option value="Salem">Salem</option>
+                            <option value="Trichy">Trichy</option>
+                            <option value="Nagercoil">Nagercoil</option>
+                            <option value="Vellore">Vellore</option>
+                            <option value="Madurai">Madurai</option>
+                            <option value="Coimbatore">Coimbatore</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="complaint-address">Address/Landmark <span class="required">*</span></label>
+                        <input type="text" id="complaint-address" placeholder="Enter street address or landmark" required>
+                    </div>
+                </div>
+
+                <div class="map-section">
+                    <label>Mark Location on Map <span class="required">*</span></label>
+                    <div id="complaint-map"></div>
+                    <p class="location-hint">📍 Click on the map to mark the exact location of the issue</p>
+                    <input type="hidden" id="complaint-lat" required>
+                    <input type="hidden" id="complaint-lng" required>
+                </div>
+            </div>
+
+            <!-- Submit Section -->
+            <div class="submit-section">
+                <div>
+                    <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
+                </div>
+                <button type="submit" class="submit-btn">Submit Complaint</button>
+            </div>
+        </form>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        let map;
+        let marker;
+        let selectedLat = null;
+        let selectedLng = null;
+        let currentUser = null;
+
+        // Check authentication
+        const userData = sessionStorage.getItem('publicUser');
+        if (!userData) {
+            window.location.href = 'public-login.html';
+        } else {
+            currentUser = JSON.parse(userData);
+            document.getElementById('user-name').textContent = currentUser.name;
+            document.getElementById('user-contact').textContent = `${currentUser.email} | ${currentUser.phone}`;
+            
+            // Pre-fill city if user has one
+            if (currentUser.city) {
+                document.getElementById('complaint-city').value = currentUser.city;
+            }
+        }
+
+        // City coordinates
+        const cityCoordinates = {
+            'Chennai': { lat: 13.0827, lng: 80.2707 },
+            'Salem': { lat: 11.1271, lng: 78.6569 },
+            'Trichy': { lat: 10.7905, lng: 78.7047 },
+            'Nagercoil': { lat: 8.0883, lng: 77.5385 },
+            'Vellore': { lat: 12.9716, lng: 79.1588 },
+            'Madurai': { lat: 9.9252, lng: 78.1198 },
+            'Coimbatore': { lat: 11.0168, lng: 76.9558 }
+        };
+
+        // Initialize map
+        function initMap() {
+            const defaultCity = currentUser.city && cityCoordinates[currentUser.city] 
+                ? cityCoordinates[currentUser.city] 
+                : { lat: 11.1271, lng: 78.6569 };
+            
+            map = L.map('complaint-map').setView([defaultCity.lat, defaultCity.lng], currentUser.city ? 13 : 7);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Add click event to mark location
+            map.on('click', function(e) {
+                if (marker) {
+                    map.removeLayer(marker);
+                }
+                
+                marker = L.marker([e.latlng.lat, e.latlng.lng], {
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    })
+                }).addTo(map);
+
+                selectedLat = e.latlng.lat;
+                selectedLng = e.latlng.lng;
+                document.getElementById('complaint-lat').value = selectedLat;
+                document.getElementById('complaint-lng').value = selectedLng;
+
+                marker.bindPopup('Selected Location').openPopup();
+            });
+        }
+
+        // Update map when city is selected
+        function updateMapLocation() {
+            const city = document.getElementById('complaint-city').value;
+            if (city && cityCoordinates[city]) {
+                const coords = cityCoordinates[city];
+                map.setView([coords.lat, coords.lng], 13);
+            }
+        }
+
+        // Update subcategories based on category
+        function updateSubcategories() {
+            const category = document.getElementById('complaint-category').value;
+            const typeSelect = document.getElementById('complaint-type');
+            
+            const typeOptions = {
+                'Road': ['Pothole', 'Road Damage', 'Road Crack', 'Broken Speed Breaker'],
+                'Garbage': ['Garbage Dump', 'Overflowing Bin', 'Illegal Dumping', 'No Collection'],
+                'Streetlight': ['Streetlight Out', 'Dim Light', 'Broken Pole', 'Missing Light'],
+                'Water': ['Water Leakage', 'No Water Supply', 'Sewage Overflow', 'Drainage Block'],
+                'Other': ['Other']
+            };
+
+            typeSelect.innerHTML = '<option value="">Select Issue Type</option>';
+            
+            if (typeOptions[category]) {
+                typeOptions[category].forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    typeSelect.appendChild(option);
+                });
+            }
+        }
+
+        // Handle complaint submission
+        function handleComplaintSubmit(event) {
+            event.preventDefault();
+
+            // Validate location is selected
+            if (!selectedLat || !selectedLng) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Location Required',
+                    text: 'Please click on the map to mark the location of the issue.',
+                    confirmButtonColor: '#3b82f6'
+                });
+                return;
+            }
+
+            // Collect form data
+            const complaintData = {
+                category: document.getElementById('complaint-category').value,
+                type: document.getElementById('complaint-type').value,
+                description: document.getElementById('complaint-description').value,
+                priority: document.getElementById('complaint-priority').value,
+                location: document.getElementById('complaint-city').value,
+                address: document.getElementById('complaint-address').value,
+                lat: selectedLat,
+                lng: selectedLng,
+                reportedBy: currentUser.name,
+                phone: currentUser.phone,
+                email: currentUser.email
+            };
+
+            // Save to database with user ID
+            try {
+                const complaint = DB.createPublicComplaintWithUser(complaintData, currentUser.id);
+                
+                // Update session with new complaint count
+                const updatedUser = DB.getPublicUserById(currentUser.id);
+                sessionStorage.setItem('publicUser', JSON.stringify(updatedUser));
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Complaint Submitted Successfully!',
+                    html: `
+                        <p>Your complaint has been submitted to the government.</p>
+                        <p><strong>Complaint ID:</strong> <span style="color: #667eea; font-weight: bold;">${complaint.id}</span></p>
+                        <p>You can track its status in your dashboard.</p>
+                    `,
+                    confirmButtonText: 'View Dashboard',
+                    confirmButtonColor: '#667eea',
+                    allowOutsideClick: false
+                }).then(() => {
+                    window.location.href = 'dashboard.html';
+                });
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Submission Failed',
+                    text: 'An error occurred while submitting your complaint. Please try again.',
+                    confirmButtonColor: '#3b82f6'
+                });
+                console.error('Error:', error);
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            initMap();
+        });
+    </script>
+</body>
+</html>
+
+

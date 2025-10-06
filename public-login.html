@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public User Login - GeoReport Tamil Nadu</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Sweet Alert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1rem;
+        }
+
+        .auth-container {
+            background: var(--card-background);
+            border-radius: 1.5rem;
+            box-shadow: var(--shadow-xl);
+            padding: 3rem;
+            width: 100%;
+            max-width: 500px;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .auth-header h1 {
+            color: var(--text-primary);
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 1rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+        }
+
+        .form-container {
+            display: none;
+        }
+
+        .form-container.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .form-group label .required {
+            color: #ef4444;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            background-color: var(--card-background);
+            color: var(--text-primary);
+            transition: all var(--transition-fast);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            margin-top: 1rem;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .auth-btn:active {
+            transform: translateY(0);
+        }
+
+        .divider {
+            text-align: center;
+            margin: 2rem 0;
+            color: var(--text-secondary);
+            position: relative;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        .divider::before {
+            left: 0;
+        }
+
+        .divider::after {
+            right: 0;
+        }
+
+        .link {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--text-secondary);
+        }
+
+        .link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .link a:hover {
+            text-decoration: underline;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 0.75rem;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: all var(--transition-fast);
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-box p {
+            color: var(--text-primary);
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        body.dark-mode {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">🌙</button>
+
+    <div class="auth-container">
+        <div class="auth-header">
+            <div class="auth-icon">👤</div>
+            <h1>Public User Portal</h1>
+            <p>Login or Register to track your complaints</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('login')">Login</button>
+            <button class="tab" onclick="switchTab('register')">Register</button>
+        </div>
+
+        <!-- Login Form -->
+        <div id="login-form" class="form-container active">
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="login-email">Email or Phone <span class="required">*</span></label>
+                    <input type="text" id="login-email" placeholder="Enter your email or phone" required autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password">Password <span class="required">*</span></label>
+                    <input type="password" id="login-password" placeholder="Enter your password" required autocomplete="current-password">
+                </div>
+
+                <button type="submit" class="auth-btn">Login</button>
+            </form>
+
+            <div class="divider">OR</div>
+
+            <div class="link">
+                Don't have an account? <a href="#" onclick="switchTab('register'); return false;">Register here</a>
+            </div>
+        </div>
+
+        <!-- Register Form -->
+        <div id="register-form" class="form-container">
+            <div class="info-box">
+                <p><strong>📝 Create Your Account</strong><br>Register to submit and track your civic complaints in Tamil Nadu.</p>
+            </div>
+
+            <form onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="reg-name">Full Name <span class="required">*</span></label>
+                    <input type="text" id="reg-name" placeholder="Enter your full name" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reg-email">Email <span class="required">*</span></label>
+                        <input type="email" id="reg-email" placeholder="your@email.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reg-phone">Phone <span class="required">*</span></label>
+                        <input type="tel" id="reg-phone" placeholder="+91 XXXXXXXXXX" pattern="[+0-9\s\-()]+" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-password">Password <span class="required">*</span></label>
+                    <input type="password" id="reg-password" placeholder="Create a password" minlength="6" required autocomplete="new-password">
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-confirm-password">Confirm Password <span class="required">*</span></label>
+                    <input type="password" id="reg-confirm-password" placeholder="Confirm your password" minlength="6" required autocomplete="new-password">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reg-city">City</label>
+                        <select id="reg-city">
+                            <option value="">Select City</option>
+                            <option value="Chennai">Chennai</option>
+                            <option value="Salem">Salem</option>
+                            <option value="Trichy">Trichy</option>
+                            <option value="Nagercoil">Nagercoil</option>
+                            <option value="Vellore">Vellore</option>
+                            <option value="Madurai">Madurai</option>
+                            <option value="Coimbatore">Coimbatore</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reg-address">Address</label>
+                        <input type="text" id="reg-address" placeholder="Your address (optional)">
+                    </div>
+                </div>
+
+                <button type="submit" class="auth-btn">Create Account</button>
+            </form>
+
+            <div class="divider">OR</div>
+
+            <div class="link">
+                Already have an account? <a href="#" onclick="switchTab('login'); return false;">Login here</a>
+            </div>
+        </div>
+
+        <!-- Links -->
+        <div class="link" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+            <a href="welcome.html">← Back to Home</a> | 
+        <a href="login.html">Government/Admin Login</a>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+    // Tab switching
+    function switchTab(tab) {
+        // Update tab buttons
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        event.target.classList.add('active');            // Update forms
+            document.querySelectorAll('.form-container').forEach(f => f.classList.remove('active'));
+            document.getElementById(tab + '-form').classList.add('active');
+        }
+
+        // Handle login
+        function handleLogin(event) {
+            event.preventDefault();
+
+            const emailOrPhone = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            const result = DB.loginPublicUser(emailOrPhone, password);
+
+            if (result.success) {
+                // Store user session
+                sessionStorage.setItem('publicUser', JSON.stringify(result.user));
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Login Successful!',
+                    text: `Welcome back, ${result.user.name}!`,
+                    showConfirmButton: false,
+                    timer: 1500,
+                    timerProgressBar: true
+                }).then(() => {
+                    window.location.href = 'dashboard.html';
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Login Failed',
+                    text: result.message,
+                    confirmButtonText: 'Try Again',
+                    confirmButtonColor: '#3b82f6'
+                });
+            }
+        }
+
+        // Handle registration
+        function handleRegister(event) {
+            event.preventDefault();
+
+            const password = document.getElementById('reg-password').value;
+            const confirmPassword = document.getElementById('reg-confirm-password').value;
+
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Password Mismatch',
+                    text: 'Passwords do not match!',
+                    confirmButtonColor: '#3b82f6'
+                });
+                return;
+            }
+
+            const userData = {
+                name: document.getElementById('reg-name').value,
+                email: document.getElementById('reg-email').value,
+                phone: document.getElementById('reg-phone').value,
+                password: password,
+                city: document.getElementById('reg-city').value,
+                address: document.getElementById('reg-address').value
+            };
+
+            const result = DB.registerPublicUser(userData);
+
+            if (result.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Registration Successful!',
+                    html: `
+                        <p>Your account has been created successfully!</p>
+                        <p><strong>User ID:</strong> ${result.user.id}</p>
+                        <p>You can now login and submit complaints.</p>
+                    `,
+                    confirmButtonText: 'Login Now',
+                    confirmButtonColor: '#667eea'
+                }).then(() => {
+                    // Switch to login tab and fill email
+                    switchTab('login');
+                    document.getElementById('login-email').value = userData.email;
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Registration Failed',
+                    text: result.message,
+                    confirmButtonColor: '#3b82f6'
+                });
+            }
+        }
+
+        // Theme toggle
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            document.getElementById('theme-toggle').textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('publicAuthDarkMode', isDark);
+        }
+
+        // Load dark mode preference
+        if (localStorage.getItem('publicAuthDarkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('theme-toggle').textContent = '☀️';
+        }
+
+        // Redirect if already logged in
+        const publicUser = sessionStorage.getItem('publicUser');
+        if (publicUser) {
+            window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>
+

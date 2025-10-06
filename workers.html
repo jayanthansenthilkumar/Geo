@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workers - GeoReport Tamil Nadu</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Sweet Alert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Consolidated App -->
+    <script src="app.js"></script>
+    <style>
+        .workers-container {
+            padding: 2rem;
+            background-color: var(--background-light);
+            min-height: calc(100vh - 70px);
+        }
+
+        .workers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .worker-card {
+            background: var(--card-background);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-normal);
+            border-left: 4px solid var(--success-color);
+        }
+
+        .worker-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .worker-card.inactive {
+            border-left-color: var(--secondary-color);
+            opacity: 0.7;
+        }
+
+        .worker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .worker-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .worker-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .worker-status.active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .worker-status.inactive {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .worker-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .worker-info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .worker-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-item .number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .stat-item .label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <h1>🗺️ GeoReport Tamil Nadu</h1>
+        <div class="header-actions">
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link">Dashboard</a>
+                <a href="analytics.html" class="nav-link">Analytics</a>
+                <a href="workers.html" class="nav-link active">Workers</a>
+            </nav>
+            <button class="theme-toggle-btn" id="theme-toggle" onclick="toggleDarkMode()" title="Toggle Dark Mode">
+                <span class="theme-icon">🌙</span>
+            </button>
+            <div class="user-info">
+                <span id="user-name">Welcome, Administrator</span>
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="workers-container">
+        <h2>👷 Field Workers Management</h2>
+        <div id="workers-grid" class="workers-grid">
+            <!-- Workers loaded dynamically -->
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        if (!Auth.requireAuth()) {
+            // Will redirect to login if not authenticated
+        }
+
+        // Initialize user info
+        const user = Auth.getCurrentUser();
+        if (user) {
+            document.getElementById('user-name').textContent = `Welcome, ${user.name}`;
+        }
+
+        // Load dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            document.querySelector('.theme-icon').textContent = '☀️';
+        }
+
+        // Handle logout
+        function handleLogout() {
+            Swal.fire({
+                title: 'Logout?',
+                text: 'Are you sure you want to logout?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3b82f6',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, logout'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Auth.logout();
+                }
+            });
+        }
+
+        // Dark mode toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            document.querySelector('.theme-icon').textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        // Load workers
+        function loadWorkers() {
+            const workers = DB.getAllWorkers();
+            const container = document.getElementById('workers-grid');
+
+            if (workers.length === 0) {
+                container.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-secondary);">No workers found.</p>';
+                return;
+            }
+
+            container.innerHTML = workers.map(worker => `
+                <div class="worker-card ${worker.status === 'active' ? 'active' : 'inactive'}">
+                    <div class="worker-header">
+                        <div class="worker-name">${worker.name}</div>
+                        <span class="worker-status ${worker.status}">${worker.status}</span>
+                    </div>
+                    
+                    <div class="worker-info">
+                        <div class="worker-info-item">
+                            <span>📞</span>
+                            <span>${worker.phone}</span>
+                        </div>
+                        <div class="worker-info-item">
+                            <span>📧</span>
+                            <span>${worker.email}</span>
+                        </div>
+                        <div class="worker-info-item">
+                            <span>🔧</span>
+                            <span>${worker.specialization}</span>
+                        </div>
+                        <div class="worker-info-item">
+                            <span>📍</span>
+                            <span>${worker.zone}</span>
+                        </div>
+                    </div>
+
+                    <div class="worker-stats">
+                        <div class="stat-item">
+                            <div class="number">${worker.activeIssues}</div>
+                            <div class="label">Active Issues</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="number">${worker.resolvedIssues}</div>
+                            <div class="label">Resolved</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load workers on page load
+        loadWorkers();
+    </script>
+</body>
+</html>

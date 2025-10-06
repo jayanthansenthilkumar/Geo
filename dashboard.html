@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoReport - Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="app.js"></script>
+</head>
+<body>
+
+    <!-- Unified Header -->
+    <header class="app-header">
+        <h1 id="dashboard-title">🗺️ GeoReport Dashboard</h1>
+        <div class="header-actions">
+            <nav class="nav-menu" id="nav-menu">
+                <!-- Navigation will be dynamically loaded based on role -->
+            </nav>
+            <span id="user-info" class="user-info"></span>
+            <button class="theme-toggle-btn" id="theme-toggle" title="Toggle Dark Mode">🌙</button>
+            <button class="logout-btn" onclick="handleLogout()">Logout</button>
+        </div>
+    </header>
+
+    <!-- Role-Based Content Container -->
+    <div id="dashboard-content">
+        <!-- Content will be dynamically loaded based on user role -->
+    </div>
+
+    <script>
+        let currentUser = null;
+        let currentRole = null;
+        let map = null;
+        let markers = [];
+
+        // Initialize dashboard
+        function initDashboard() {
+            // Check authentication
+            const adminUser = sessionStorage.getItem('currentUser');
+            const publicUserData = sessionStorage.getItem('publicUser');
+
+            if (adminUser) {
+                currentUser = JSON.parse(adminUser);
+                currentRole = currentUser.role; // admin, supervisor, government
+            } else if (publicUserData) {
+                currentUser = JSON.parse(publicUserData);
+                currentRole = 'public';
+            } else {
+                // Not logged in
+                window.location.href = 'welcome.html';
+                return;
+            }
+
+            // Load appropriate dashboard
+            loadDashboardForRole(currentRole);
+        }
+
+        // Load dashboard based on role
+        function loadDashboardForRole(role) {
+            document.getElementById('user-info').textContent = `👤 ${currentUser.name || currentUser.username} (${role.toUpperCase()})`;
+
+            switch(role) {
+                case 'admin':
+                    loadAdminDashboard();
+                    break;
+                case 'supervisor':
+                    loadSupervisorDashboard();
+                    break;
+                case 'government':
+                    loadGovernmentDashboard();
+                    break;
+                case 'public':
+                    loadPublicDashboard();
+                    break;
+                default:
+                    showError('Invalid role');
+            }
+        }
+
+        // ========== ADMIN DASHBOARD ==========
+        function loadAdminDashboard() {
+            document.getElementById('dashboard-title').innerHTML = '🗺️ Admin Dashboard';
+            
+            const nav = `
+                <a href="#" onclick="loadAdminDashboard(); return false;" class="nav-link active">Dashboard</a>
+                <a href="analytics.html" class="nav-link">Analytics</a>
+                <a href="workers.html" class="nav-link">Workers</a>
+            `;
+            document.getElementById('nav-menu').innerHTML = nav;
+
+            const content = `
+                <div class="dashboard-container">
+                    <!-- Statistics Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Total Issues</h3>
+                            <p class="stat-number" id="stat-total">0</p>
+                        </div>
+                        <div class="stat-card pending">
+                            <h3>Pending</h3>
+                            <p class="stat-number" id="stat-pending">0</p>
+                        </div>
+                        <div class="stat-card in-progress">
+                            <h3>In Progress</h3>
+                            <p class="stat-number" id="stat-progress">0</p>
+                        </div>
+                        <div class="stat-card resolved">
+                            <h3>Resolved</h3>
+                            <p class="stat-number" id="stat-resolved">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Filters and Actions -->
+                    <div class="controls-section">
+                        <div class="filters">
+                            <select id="filter-status" onchange="filterIssues()">
+                                <option value="All">All Status</option>
+                                <option value="Pending">Pending</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Resolved">Resolved</option>
+                            </select>
+                            <select id="filter-priority" onchange="filterIssues()">
+                                <option value="All">All Priority</option>
+                                <option value="High">High</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Low">Low</option>
+                            </select>
+                            <select id="filter-category" onchange="filterIssues()">
+                                <option value="All">All Categories</option>
+                                <option value="Road">Road</option>
+                                <option value="Garbage">Garbage</option>
+                                <option value="Streetlight">Streetlight</option>
+                                <option value="Water">Water</option>
+                            </select>
+                            <input type="text" id="search-input" placeholder="Search issues..." onkeyup="filterIssues()">
+                        </div>
+                        <div class="actions">
+                            <button class="btn-primary" onclick="addNewIssue()">+ New Issue</button>
+                            <button class="btn-secondary" onclick="exportIssues()">📊 Export CSV</button>
+                            <button class="btn-secondary" onclick="refreshIssues()">🔄 Refresh</button>
+                        </div>
+                    </div>
+
+                    <!-- Map Container -->
+                    <div id="map-container" style="height: 400px; margin: 20px 0; border-radius: 8px; overflow: hidden;"></div>
+
+                    <!-- Issues List -->
+                    <div class="issues-container">
+                        <h2>📋 All Issues</h2>
+                        <div id="issues-list" class="issues-list"></div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('dashboard-content').innerHTML = content;
+            
+            loadAdminIssues();
+            initMap();
+        }
+
+        function loadAdminIssues() {
+            const issues = IssueService.getAllIssues();
+            const stats = IssueService.getStatistics();
+            
+            document.getElementById('stat-total').textContent = stats.total;
+            document.getElementById('stat-pending').textContent = stats.pending;
+            document.getElementById('stat-progress').textContent = stats.inProgress;
+            document.getElementById('stat-resolved').textContent = stats.resolved;
+            
+            displayIssues(issues);
+        }
+
+        // ========== GOVERNMENT DASHBOARD ==========
+        function loadGovernmentDashboard() {
+            document.getElementById('dashboard-title').innerHTML = '🏛️ Government Dashboard - Public Complaints Review';
+            
+            const nav = `
+                <a href="#" onclick="loadGovernmentDashboard(); return false;" class="nav-link active">Complaints</a>
+                <a href="#" onclick="switchGovTab('issues'); return false;" class="nav-link">Approved Issues</a>
+            `;
+            document.getElementById('nav-menu').innerHTML = nav;
+
+            const content = `
+                <div class="dashboard-container">
+                    <!-- Statistics Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Total Complaints</h3>
+                            <p class="stat-number" id="gov-stat-total">0</p>
+                        </div>
+                        <div class="stat-card pending">
+                            <h3>Submitted</h3>
+                            <p class="stat-number" id="gov-stat-submitted">0</p>
+                        </div>
+                        <div class="stat-card in-progress">
+                            <h3>Under Review</h3>
+                            <p class="stat-number" id="gov-stat-review">0</p>
+                        </div>
+                        <div class="stat-card resolved">
+                            <h3>Converted</h3>
+                            <p class="stat-number" id="gov-stat-converted">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Tab Navigation -->
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchGovTab('submitted')">Submitted</button>
+                        <button class="tab" onclick="switchGovTab('review')">Under Review</button>
+                        <button class="tab" onclick="switchGovTab('approved')">Approved</button>
+                        <button class="tab" onclick="switchGovTab('rejected')">Rejected</button>
+                        <button class="tab" onclick="switchGovTab('converted')">Converted</button>
+                    </div>
+
+                    <!-- Complaints List -->
+                    <div class="complaints-container">
+                        <h2 id="gov-section-title">📋 Submitted Complaints</h2>
+                        <div id="gov-complaints-list" class="complaints-list"></div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('dashboard-content').innerHTML = content;
+            
+            loadGovernmentComplaints();
+        }
+
+        function loadGovernmentComplaints() {
+            const complaints = DB.getAllPublicComplaints();
+            const stats = DB.getComplaintStatistics();
+            
+            document.getElementById('gov-stat-total').textContent = stats.total;
+            document.getElementById('gov-stat-submitted').textContent = stats.submitted;
+            document.getElementById('gov-stat-review').textContent = stats.underReview;
+            document.getElementById('gov-stat-converted').textContent = stats.converted;
+            
+            switchGovTab('submitted');
+        }
+
+        function switchGovTab(status) {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(t => t.classList.remove('active'));
+            event?.target?.classList.add('active');
+
+            const statusMap = {
+                'submitted': 'Submitted',
+                'review': 'Under Review',
+                'approved': 'Approved',
+                'rejected': 'Rejected',
+                'converted': 'Converted'
+            };
+
+            const complaints = DB.getAllPublicComplaints().filter(c => c.status === statusMap[status]);
+            document.getElementById('gov-section-title').textContent = `📋 ${statusMap[status]} Complaints (${complaints.length})`;
+            displayGovernmentComplaints(complaints);
+        }
+
+        function displayGovernmentComplaints(complaints) {
+            const container = document.getElementById('gov-complaints-list');
+            
+            if (complaints.length === 0) {
+                container.innerHTML = '<p class="no-data">No complaints in this category</p>';
+                return;
+            }
+
+            container.innerHTML = complaints.map(c => `
+                <div class="complaint-card">
+                    <div class="complaint-header">
+                        <h3>${c.id} - ${c.type}</h3>
+                        <span class="badge badge-${c.priority.toLowerCase()}">${c.priority}</span>
+                    </div>
+                    <p><strong>Category:</strong> ${c.category}</p>
+                    <p><strong>Location:</strong> ${c.location} - ${c.address}</p>
+                    <p><strong>Description:</strong> ${c.description}</p>
+                    <p><strong>Reported by:</strong> ${c.reportedBy} | ${c.phone}</p>
+                    <p><strong>Submitted:</strong> ${new Date(c.submittedAt).toLocaleString()}</p>
+                    ${c.status === 'Submitted' ? `
+                        <div class="complaint-actions">
+                            <button class="btn-primary" onclick="reviewComplaint('${c.id}')">Review</button>
+                        </div>
+                    ` : ''}
+                    ${c.convertedToIssueId ? `<p><strong>✅ Converted to Issue:</strong> ${c.convertedToIssueId}</p>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function reviewComplaint(complaintId) {
+            Swal.fire({
+                title: 'Review Complaint',
+                html: `
+                    <select id="review-action" class="swal2-input" style="width: 80%;">
+                        <option value="">Choose Action</option>
+                        <option value="approve">Approve & Convert to Issue</option>
+                        <option value="reject">Reject</option>
+                        <option value="review">Mark Under Review</option>
+                    </select>
+                    <textarea id="review-notes" class="swal2-textarea" placeholder="Review notes (optional)"></textarea>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Submit Review',
+                preConfirm: () => {
+                    const action = document.getElementById('review-action').value;
+                    const notes = document.getElementById('review-notes').value;
+                    
+                    if (!action) {
+                        Swal.showValidationMessage('Please select an action');
+                        return false;
+                    }
+                    return { action, notes };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const { action, notes } = result.value;
+                    
+                    if (action === 'approve') {
+                        const issue = DB.convertComplaintToIssue(complaintId);
+                        Swal.fire('Success!', `Complaint converted to Issue ${issue.id}`, 'success');
+                    } else {
+                        const status = action === 'reject' ? 'Rejected' : 'Under Review';
+                        DB.updateComplaintStatus(complaintId, status, currentUser.name, notes);
+                        Swal.fire('Success!', `Complaint marked as ${status}`, 'success');
+                    }
+                    
+                    loadGovernmentComplaints();
+                }
+            });
+        }
+
+        // ========== PUBLIC DASHBOARD ==========
+        function loadPublicDashboard() {
+            document.getElementById('dashboard-title').innerHTML = '👤 My Complaint Dashboard';
+            
+            const nav = `
+                <a href="#" onclick="loadPublicDashboard(); return false;" class="nav-link active">My Complaints</a>
+                <a href="#" onclick="showProfile(); return false;" class="nav-link">My Profile</a>
+                <a href="public-submit.html" class="nav-link">+ New Complaint</a>
+            `;
+            document.getElementById('nav-menu').innerHTML = nav;
+
+            const content = `
+                <div class="dashboard-container">
+                    <!-- User Info -->
+                    <div class="user-welcome">
+                        <h2>Welcome back, ${currentUser.name}!</h2>
+                        <p>Track and manage your civic complaints</p>
+                    </div>
+
+                    <!-- Statistics Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Total Complaints</h3>
+                            <p class="stat-number" id="pub-stat-total">0</p>
+                        </div>
+                        <div class="stat-card pending">
+                            <h3>Submitted</h3>
+                            <p class="stat-number" id="pub-stat-submitted">0</p>
+                        </div>
+                        <div class="stat-card in-progress">
+                            <h3>Under Review</h3>
+                            <p class="stat-number" id="pub-stat-review">0</p>
+                        </div>
+                        <div class="stat-card resolved">
+                            <h3>Resolved</h3>
+                            <p class="stat-number" id="pub-stat-resolved">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="controls-section">
+                        <div class="filters">
+                            <select id="pub-filter-status" onchange="filterPublicComplaints()">
+                                <option value="All">All Status</option>
+                                <option value="Submitted">Submitted</option>
+                                <option value="Under Review">Under Review</option>
+                                <option value="Approved">Approved</option>
+                                <option value="Converted">Converted</option>
+                                <option value="Rejected">Rejected</option>
+                            </select>
+                            <input type="text" id="pub-search-input" placeholder="Search my complaints..." onkeyup="filterPublicComplaints()">
+                        </div>
+                        <div class="actions">
+                            <a href="public-submit.html" class="btn-primary">+ New Complaint</a>
+                        </div>
+                    </div>
+
+                    <!-- Complaints List -->
+                    <div class="complaints-container">
+                        <h2>📋 My Complaints</h2>
+                        <div id="pub-complaints-list" class="complaints-list"></div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('dashboard-content').innerHTML = content;
+            
+            loadPublicComplaints();
+        }
+
+        function loadPublicComplaints() {
+            const complaints = DB.getComplaintsByUserId(currentUser.id);
+            const stats = DB.getPublicUserStatistics(currentUser.id);
+            
+            document.getElementById('pub-stat-total').textContent = stats.total;
+            document.getElementById('pub-stat-submitted').textContent = stats.submitted;
+            document.getElementById('pub-stat-review').textContent = stats.underReview;
+            document.getElementById('pub-stat-resolved').textContent = stats.converted;
+            
+            displayPublicComplaints(complaints);
+        }
+
+        function displayPublicComplaints(complaints) {
+            const container = document.getElementById('pub-complaints-list');
+            
+            if (complaints.length === 0) {
+                container.innerHTML = '<p class="no-data">You haven\'t submitted any complaints yet. <a href="public-submit.html">Submit your first complaint →</a></p>';
+                return;
+            }
+
+            container.innerHTML = complaints.map(c => `
+                <div class="complaint-card">
+                    <div class="complaint-header">
+                        <h3>${c.id} - ${c.type}</h3>
+                        <span class="badge badge-${c.status.toLowerCase().replace(' ', '-')}">${c.status}</span>
+                    </div>
+                    <p><strong>Category:</strong> ${c.category}</p>
+                    <p><strong>Location:</strong> ${c.location} - ${c.address}</p>
+                    <p><strong>Submitted:</strong> ${new Date(c.submittedAt).toLocaleString()}</p>
+                    ${c.convertedToIssueId ? `<p class="success-text">✅ Converted to Official Issue: ${c.convertedToIssueId}</p>` : ''}
+                    ${c.reviewNotes ? `<p><strong>Review Notes:</strong> ${c.reviewNotes}</p>` : ''}
+                    <button class="btn-secondary btn-sm" onclick="viewComplaintDetails('${c.id}')">View Details</button>
+                </div>
+            `).join('');
+        }
+
+        function filterPublicComplaints() {
+            const status = document.getElementById('pub-filter-status').value;
+            const search = document.getElementById('pub-search-input').value.toLowerCase();
+            
+            let complaints = DB.getComplaintsByUserId(currentUser.id);
+            
+            if (status !== 'All') {
+                complaints = complaints.filter(c => c.status === status);
+            }
+            
+            if (search) {
+                complaints = complaints.filter(c => 
+                    c.id.toLowerCase().includes(search) ||
+                    c.type.toLowerCase().includes(search) ||
+                    c.description.toLowerCase().includes(search) ||
+                    c.location.toLowerCase().includes(search)
+                );
+            }
+            
+            displayPublicComplaints(complaints);
+        }
+
+        function viewComplaintDetails(complaintId) {
+            const complaint = DB.getComplaintById(complaintId);
+            
+            Swal.fire({
+                title: `Complaint ${complaint.id}`,
+                html: `
+                    <div style="text-align: left;">
+                        <p><strong>Type:</strong> ${complaint.type}</p>
+                        <p><strong>Category:</strong> ${complaint.category}</p>
+                        <p><strong>Priority:</strong> ${complaint.priority}</p>
+                        <p><strong>Status:</strong> <span class="badge badge-${complaint.status.toLowerCase().replace(' ', '-')}">${complaint.status}</span></p>
+                        <p><strong>Location:</strong> ${complaint.location}</p>
+                        <p><strong>Address:</strong> ${complaint.address}</p>
+                        <p><strong>Description:</strong> ${complaint.description}</p>
+                        <p><strong>Submitted:</strong> ${new Date(complaint.submittedAt).toLocaleString()}</p>
+                        ${complaint.reviewedAt ? `<p><strong>Reviewed:</strong> ${new Date(complaint.reviewedAt).toLocaleString()}</p>` : ''}
+                        ${complaint.reviewedBy ? `<p><strong>Reviewed By:</strong> ${complaint.reviewedBy}</p>` : ''}
+                        ${complaint.reviewNotes ? `<p><strong>Notes:</strong> ${complaint.reviewNotes}</p>` : ''}
+                        ${complaint.convertedToIssueId ? `<p class="success-text">✅ Converted to Issue: ${complaint.convertedToIssueId}</p>` : ''}
+                        <div id="detail-map" style="height: 300px; margin-top: 15px; border-radius: 8px;"></div>
+                    </div>
+                `,
+                width: '600px',
+                didOpen: () => {
+                    const detailMap = L.map('detail-map').setView([complaint.lat, complaint.lng], 15);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(detailMap);
+                    L.marker([complaint.lat, complaint.lng]).addTo(detailMap);
+                }
+            });
+        }
+
+        function showProfile() {
+            Swal.fire({
+                title: 'My Profile',
+                html: `
+                    <div style="text-align: left;">
+                        <p><strong>User ID:</strong> ${currentUser.id}</p>
+                        <p><strong>Name:</strong> ${currentUser.name}</p>
+                        <p><strong>Email:</strong> ${currentUser.email}</p>
+                        <p><strong>Phone:</strong> ${currentUser.phone}</p>
+                        <p><strong>City:</strong> ${currentUser.city || 'Not specified'}</p>
+                        <p><strong>Member Since:</strong> ${new Date(currentUser.createdAt).toLocaleDateString()}</p>
+                        <p><strong>Total Complaints:</strong> ${currentUser.totalComplaints}</p>
+                    </div>
+                `,
+                icon: 'info'
+            });
+        }
+
+        // ========== SUPERVISOR DASHBOARD ==========
+        function loadSupervisorDashboard() {
+            // Supervisor has same view as admin but with limited editing
+            loadAdminDashboard();
+            document.getElementById('dashboard-title').innerHTML = '👔 Supervisor Dashboard';
+        }
+
+        // ========== SHARED FUNCTIONS ==========
+        function displayIssues(issues) {
+            const container = document.getElementById('issues-list');
+            
+            if (issues.length === 0) {
+                container.innerHTML = '<p class="no-data">No issues found</p>';
+                return;
+            }
+
+            container.innerHTML = issues.map(issue => `
+                <div class="issue-card">
+                    <div class="issue-header">
+                        <h3>${issue.id} - ${issue.type}</h3>
+                        <div>
+                            <span class="badge badge-${issue.status.toLowerCase().replace(' ', '-')}">${issue.status}</span>
+                            <span class="badge badge-${issue.priority.toLowerCase()}">${issue.priority}</span>
+                        </div>
+                    </div>
+                    <p><strong>Category:</strong> ${issue.category}</p>
+                    <p><strong>Location:</strong> ${issue.location} - ${issue.address}</p>
+                    <p><strong>Description:</strong> ${issue.description}</p>
+                    <p><strong>Reported:</strong> ${new Date(issue.reportedAt).toLocaleString()}</p>
+                    ${issue.assignedTo ? `<p><strong>Assigned to:</strong> ${issue.assignedTo}</p>` : '<p><strong>Status:</strong> Unassigned</p>'}
+                    <div class="issue-actions">
+                        <button class="btn-primary btn-sm" onclick="viewOnMap(${issue.lat}, ${issue.lng}, '${issue.id}')">📍 View on Map</button>
+                        ${currentRole === 'admin' ? `
+                            <button class="btn-secondary btn-sm" onclick="assignIssue('${issue.id}')">Assign</button>
+                            <button class="btn-secondary btn-sm" onclick="updateStatus('${issue.id}')">Update Status</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+
+            updateMapMarkers(issues);
+        }
+
+        function filterIssues() {
+            const status = document.getElementById('filter-status').value;
+            const priority = document.getElementById('filter-priority').value;
+            const category = document.getElementById('filter-category').value;
+            const search = document.getElementById('search-input').value;
+
+            const filtered = IssueService.filterIssues({ status, priority, category, search });
+            displayIssues(filtered);
+        }
+
+        function initMap() {
+            if (map) {
+                map.remove();
+            }
+            
+            map = L.map('map-container').setView([11.0168, 76.9558], 7);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+        }
+
+        function updateMapMarkers(issues) {
+            if (!map) return;
+            
+            // Clear existing markers
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+
+            // Add new markers
+            issues.forEach(issue => {
+                const marker = L.marker([issue.lat, issue.lng]).addTo(map);
+                marker.bindPopup(`
+                    <b>${issue.id}</b><br>
+                    ${issue.type}<br>
+                    <span class="badge badge-${issue.status.toLowerCase().replace(' ', '-')}">${issue.status}</span>
+                `);
+                markers.push(marker);
+            });
+
+            // Fit bounds if markers exist
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+
+        function viewOnMap(lat, lng, issueId) {
+            if (map) {
+                map.setView([lat, lng], 15);
+                markers.forEach(m => {
+                    if (m.getLatLng().lat === lat && m.getLatLng().lng === lng) {
+                        m.openPopup();
+                    }
+                });
+                window.scrollTo({ top: document.getElementById('map-container').offsetTop - 100, behavior: 'smooth' });
+            }
+        }
+
+        function assignIssue(issueId) {
+            const workers = DB.getAllWorkers();
+            const workerOptions = workers.map(w => `<option value="${w.name}">${w.name} - ${w.specialization}</option>`).join('');
+            
+            Swal.fire({
+                title: 'Assign Issue',
+                html: `
+                    <select id="worker-select" class="swal2-input" style="width: 80%;">
+                        <option value="">Select Worker</option>
+                        ${workerOptions}
+                    </select>
+                    <input type="number" id="estimated-days" class="swal2-input" placeholder="Estimated days to resolve" min="1" value="2" style="width: 80%;">
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Assign',
+                preConfirm: () => {
+                    const worker = document.getElementById('worker-select').value;
+                    const days = document.getElementById('estimated-days').value;
+                    
+                    if (!worker) {
+                        Swal.showValidationMessage('Please select a worker');
+                        return false;
+                    }
+                    return { worker, days: parseInt(days) };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    IssueService.assignIssue(issueId, result.value.worker, result.value.days);
+                    Swal.fire('Success!', 'Issue assigned successfully', 'success');
+                    loadAdminIssues();
+                }
+            });
+        }
+
+        function updateStatus(issueId) {
+            Swal.fire({
+                title: 'Update Status',
+                html: `
+                    <select id="status-select" class="swal2-input" style="width: 80%;">
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Resolved">Resolved</option>
+                    </select>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Update',
+                preConfirm: () => {
+                    return document.getElementById('status-select').value;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    IssueService.updateIssue(issueId, { status: result.value });
+                    Swal.fire('Success!', 'Status updated', 'success');
+                    loadAdminIssues();
+                }
+            });
+        }
+
+        function addNewIssue() {
+            window.location.href = 'public-submit.html';
+        }
+
+        function refreshIssues() {
+            loadAdminIssues();
+            Swal.fire({
+                icon: 'success',
+                title: 'Refreshed!',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 1500
+            });
+        }
+
+        function exportIssues() {
+            IssueService.downloadCSV('georeport_issues.csv');
+            Swal.fire({
+                icon: 'success',
+                title: 'Exported!',
+                text: 'CSV file downloaded',
+                timer: 2000
+            });
+        }
+
+        function handleLogout() {
+            Swal.fire({
+                title: 'Logout?',
+                text: 'Are you sure you want to logout?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, logout'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    sessionStorage.removeItem('currentUser');
+                    sessionStorage.removeItem('publicUser');
+                    window.location.href = 'welcome.html';
+                }
+            });
+        }
+
+        function showError(message) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: message
+            });
+        }
+
+        // Theme toggle
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeToggle = document.getElementById('theme-toggle');
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            
+            if (currentTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                themeToggle.textContent = '☀️';
+            }
+            
+            themeToggle?.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                const isDark = document.body.classList.contains('dark-mode');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+                themeToggle.textContent = isDark ? '☀️' : '🌙';
+            });
+
+            // Initialize dashboard
+            initDashboard();
+        });
+    </script>
+
+    <style>
+        .user-welcome {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .user-welcome h2 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+
+        .user-welcome p {
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        .success-text {
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .no-data a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .badge-submitted { background: #3b82f6; }
+        .badge-under-review { background: #f59e0b; }
+        .badge-approved { background: #10b981; }
+        .badge-converted { background: #8b5cf6; }
+        .badge-rejected { background: #ef4444; }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: #f1f5f9;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .tab:hover {
+            background: #e2e8f0;
+        }
+
+        .tab.active:hover {
+            background: #2563eb;
+        }
+
+        .dark-mode .tab {
+            background: #374151;
+            color: #e5e7eb;
+        }
+
+        .dark-mode .tab.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .complaint-card, .issue-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .complaint-card:hover, .issue-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .dark-mode .complaint-card,
+        .dark-mode .issue-card {
+            background: #1f2937;
+            color: #e5e7eb;
+        }
+
+        .complaint-header, .issue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .complaint-header h3, .issue-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .complaint-actions, .issue-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .user-info {
+            background: #f1f5f9;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .dark-mode .user-info {
+            background: #374151;
+            color: #e5e7eb;
+        }
+    </style>
+</body>
+</html>

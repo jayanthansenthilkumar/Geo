@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - GeoReport Tamil Nadu</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Sweet Alert -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Consolidated App -->
+    <script src="app.js"></script>
+    <style>
+        .analytics-container {
+            padding: 2rem;
+            background-color: var(--background-light);
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .chart-card {
+            background: var(--card-background);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .chart-card h3 {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .insight-card {
+            background: var(--card-background);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-md);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .insight-card h4 {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .insight-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .insight-trend {
+            font-size: 0.85rem;
+            color: var(--success-color);
+            margin-top: 0.5rem;
+        }
+
+        .insight-trend.down {
+            color: var(--danger-color);
+        }
+
+        canvas {
+            max-height: 300px !important;
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <h1>🗺️ GeoReport Tamil Nadu</h1>
+        <div class="header-actions">
+            <nav class="nav-menu">
+                <a href="index.html" class="nav-link">Dashboard</a>
+                <a href="analytics.html" class="nav-link active">Analytics</a>
+                <a href="workers.html" class="nav-link">Workers</a>
+            </nav>
+            <button class="theme-toggle-btn" id="theme-toggle" onclick="toggleDarkMode()" title="Toggle Dark Mode">
+                <span class="theme-icon">🌙</span>
+            </button>
+            <div class="user-info">
+                <span id="user-name">Welcome, Administrator</span>
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="analytics-container">
+        <h2>📊 Analytics & Insights</h2>
+
+        <div class="insights-grid">
+            <div class="insight-card">
+                <h4>Average Resolution Time</h4>
+                <div class="insight-value" id="avg-resolution">2.5 days</div>
+                <div class="insight-trend">↓ 15% faster</div>
+            </div>
+
+            <div class="insight-card">
+                <h4>Active Workers</h4>
+                <div class="insight-value" id="active-workers">4</div>
+                <div class="insight-trend">100% Available</div>
+            </div>
+
+            <div class="insight-card">
+                <h4>Resolution Rate</h4>
+                <div class="insight-value" id="resolution-rate">75%</div>
+                <div class="insight-trend">↑ 10% improvement</div>
+            </div>
+
+            <div class="insight-card">
+                <h4>High Priority Issues</h4>
+                <div class="insight-value" id="high-priority">2</div>
+                <div class="insight-trend down">Needs attention</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Issues by Status</h3>
+                <canvas id="statusChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <h3>Issues by Priority</h3>
+                <canvas id="priorityChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <h3>Issues by Category</h3>
+                <canvas id="categoryChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <h3>Issues by Location</h3>
+                <canvas id="locationChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        if (!Auth.requireAuth()) {
+            // Will redirect to login if not authenticated
+        }
+
+        // Initialize user info
+        const user = Auth.getCurrentUser();
+        if (user) {
+            document.getElementById('user-name').textContent = `Welcome, ${user.name}`;
+        }
+
+        // Load dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            document.querySelector('.theme-icon').textContent = '☀️';
+        }
+
+        // Handle logout
+        function handleLogout() {
+            Swal.fire({
+                title: 'Logout?',
+                text: 'Are you sure you want to logout?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3b82f6',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Yes, logout'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Auth.logout();
+                }
+            });
+        }
+
+        // Dark mode toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            document.querySelector('.theme-icon').textContent = isDark ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', isDark);
+        }
+
+        // Get statistics
+        const stats = IssueService.getStatistics();
+        const issues = IssueService.getAllIssues();
+
+        // Update insights
+        const resolved = issues.filter(i => i.status === 'Resolved').length;
+        const total = issues.length;
+        const resolutionRate = total > 0 ? Math.round((resolved / total) * 100) : 0;
+        document.getElementById('resolution-rate').textContent = resolutionRate + '%';
+        document.getElementById('high-priority').textContent = stats.highPriority;
+        document.getElementById('active-workers').textContent = DB.getAllWorkers().filter(w => w.status === 'active').length;
+
+        // Chart colors
+        const chartColors = {
+            primary: '#3b82f6',
+            success: '#10b981',
+            warning: '#f59e0b',
+            danger: '#ef4444',
+            secondary: '#6b7280',
+            info: '#06b6d4'
+        };
+
+        // Status Chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'In Progress', 'Resolved'],
+                datasets: [{
+                    data: [stats.pending, stats.inProgress, stats.resolved],
+                    backgroundColor: [chartColors.warning, chartColors.primary, chartColors.success],
+                    borderWidth: 2,
+                    borderColor: getComputedStyle(document.body).getPropertyValue('--card-background')
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Priority Chart
+        const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+        new Chart(priorityCtx, {
+            type: 'bar',
+            data: {
+                labels: ['High', 'Medium', 'Low'],
+                datasets: [{
+                    label: 'Issues',
+                    data: [stats.highPriority, stats.mediumPriority, stats.lowPriority],
+                    backgroundColor: [chartColors.danger, chartColors.warning, chartColors.info],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+        // Category Chart
+        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+        new Chart(categoryCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Road', 'Garbage', 'Streetlight', 'Water'],
+                datasets: [{
+                    data: [
+                        stats.byCategory.road,
+                        stats.byCategory.garbage,
+                        stats.byCategory.streetlight,
+                        stats.byCategory.water
+                    ],
+                    backgroundColor: [
+                        chartColors.danger,
+                        chartColors.secondary,
+                        chartColors.warning,
+                        chartColors.info
+                    ],
+                    borderWidth: 2,
+                    borderColor: getComputedStyle(document.body).getPropertyValue('--card-background')
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Location Chart
+        const locationData = {};
+        issues.forEach(issue => {
+            locationData[issue.location] = (locationData[issue.location] || 0) + 1;
+        });
+
+        const locationCtx = document.getElementById('locationChart').getContext('2d');
+        new Chart(locationCtx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(locationData),
+                datasets: [{
+                    label: 'Issues by Location',
+                    data: Object.values(locationData),
+                    backgroundColor: chartColors.primary,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

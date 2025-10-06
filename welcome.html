@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GeoReport Tamil Nadu - Welcome</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.95;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.8s ease;
+            animation-fill-mode: backwards;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .card-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .card h2 {
+            color: #333;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .card p {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .card-button {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .card-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .credentials {
+            background: rgba(255,255,255,0.95);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .credentials code {
+            background: #f3f4f6;
+            padding: 0.2rem 0.5rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .info-section {
+            background: rgba(255,255,255,0.95);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: fadeInUp 0.8s ease 0.4s backwards;
+        }
+
+        .info-section h3 {
+            color: #333;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #555;
+        }
+
+        .feature-item::before {
+            content: '✅';
+            font-size: 1.2rem;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 2rem;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗺️ GeoReport Tamil Nadu</h1>
+            <p>Public-to-Government Civic Issue Management System</p>
+        </div>
+
+        <div class="cards-grid">
+            <!-- Public Card -->
+            <div class="card">
+                <div class="card-icon">👥</div>
+                <h2>Public Citizens</h2>
+                <p>Create an account to submit complaints and track their status with your personal dashboard!</p>
+                <a href="public-login.html" class="card-button">Login / Register</a>
+                <div class="credentials" style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6;">
+                    <strong>New Features!</strong><br>
+                    • Create your account<br>
+                    • Track your complaints<br>
+                    • Personal dashboard<br>
+                    • Get status updates
+                </div>
+            </div>
+
+            <!-- Government Card -->
+            <div class="card">
+                <div class="card-icon">🏛️</div>
+                <h2>Government Officials</h2>
+                <p>Review public complaints, approve or reject, and convert to official issues.</p>
+                <a href="login.html" class="card-button">Government Login</a>
+                <div class="credentials">
+                    <strong>Demo Credentials:</strong><br>
+                    Username: <code>government</code><br>
+                    Password: <code>govt123</code>
+                </div>
+            </div>
+
+            <!-- Admin Card -->
+            <div class="card">
+                <div class="card-icon">👨‍💼</div>
+                <h2>Admin / Supervisor</h2>
+                <p>Manage issues, assign to workers, track progress, and view analytics.</p>
+                <a href="login.html" class="card-button">Admin Login</a>
+                <div class="credentials">
+                    <strong>Demo Credentials:</strong><br>
+                    Admin: <code>admin</code> / <code>admin123</code><br>
+                    Supervisor: <code>supervisor</code> / <code>super123</code>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h3>📋 How It Works</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+                <div style="text-align: center;">
+                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">1️⃣</div>
+                    <strong>Register Account</strong>
+                    <p style="color: #666; margin-top: 0.5rem; font-size: 0.9rem;">Public users create their account</p>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">2️⃣</div>
+                    <strong>Submit Complaint</strong>
+                    <p style="color: #666; margin-top: 0.5rem; font-size: 0.9rem;">Report issues through personal dashboard</p>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">3️⃣</div>
+                    <strong>Government Reviews</strong>
+                    <p style="color: #666; margin-top: 0.5rem; font-size: 0.9rem;">Officials review and approve/reject complaints</p>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">4️⃣</div>
+                    <strong>Track Progress</strong>
+                    <p style="color: #666; margin-top: 0.5rem; font-size: 0.9rem;">Monitor status in your dashboard</p>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">5️⃣</div>
+                    <strong>Issue Resolved</strong>
+                    <p style="color: #666; margin-top: 0.5rem; font-size: 0.9rem;">Get notified when fixed</p>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 2rem;">✨ Key Features</h3>
+            <div class="feature-list">
+                <div class="feature-item">Public User Accounts</div>
+                <div class="feature-item">Personal Dashboard</div>
+                <div class="feature-item">Track Complaint Status</div>
+                <div class="feature-item">Interactive Maps (Leaflet)</div>
+                <div class="feature-item">Government Approval Workflow</div>
+                <div class="feature-item">Database Authentication</div>
+                <div class="feature-item">Worker Management</div>
+                <div class="feature-item">Analytics Dashboard</div>
+                <div class="feature-item">Dark Mode Support</div>
+                <div class="feature-item">Tamil Nadu Cities</div>
+                <div class="feature-item">Sweet Alert Notifications</div>
+                <div class="feature-item">Mobile Responsive</div>
+            </div>
+
+            <h3 style="margin-top: 2rem;">📍 Supported Tamil Nadu Cities</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; justify-content: center;">
+                <span style="background: #667eea; color: white; padding: 0.5rem 1rem; border-radius: 2rem;">Chennai</span>
+                <span style="background: #667eea; color: white; padding: 0.5rem 1rem; border-radius: 2rem;">Salem</span>
+                <span style="background: #667eea; color: white; padding: 0.5rem 1rem; border-radius: 2rem;">Trichy</span>
+                <span style="background: #667eea; color: white; padding: 0.5rem 1rem; border-radius: 2rem;">Nagercoil</span>
+                <span style="background: #667eea; color: white; padding: 0.5rem 1rem; border-radius: 2rem;">Vellore</span>
+                <span style="background: #667eea; color: white; padding: 0.5rem 1rem; border-radius: 2rem;">Madurai</span>
+                <span style="background: #667eea; color: white; padding: 0.5rem 1rem; border-radius: 2rem;">Coimbatore</span>
+            </div>
+
+            <div style="margin-top: 2rem; padding: 1rem; background: rgba(59, 130, 246, 0.1); border-radius: 0.5rem; border-left: 4px solid #3b82f6;">
+                <strong>📚 Documentation Available:</strong><br>
+                <ul style="margin-top: 0.5rem; margin-left: 1.5rem; color: #555;">
+                    <li><strong>QUICK_START.md</strong> - Get started in 3 steps</li>
+                    <li><strong>PUBLIC_COMPLAINT_GUIDE.md</strong> - Complete user guide</li>
+                    <li><strong>SYSTEM_ARCHITECTURE.md</strong> - Technical details</li>
+                    <li><strong>PROJECT_SUMMARY.md</strong> - Feature overview</li>
+                    <li><strong>README.md</strong> - Original documentation</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>🎉 <strong>No Installation Required</strong> - Works directly in your browser!</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">Built with ❤️ for Tamil Nadu | © 2025 GeoReport</p>
+        </div>
+    </div>
+</body>
+</html>
